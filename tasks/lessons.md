@@ -13,13 +13,15 @@ This file captures patterns and corrections to prevent repeated mistakes.
 - _Add lessons about React patterns here_
 
 ### SLDS/Styling
-- _Add lessons about Salesforce Design System usage here_
+- **NEVER use emojis as placeholders for Salesforce icons** - Use actual SLDS icon assets
+- Visual authenticity is CRITICAL - the app must be visually indistinguishable from real Salesforce
+- Don't assume visual elements - always ask the user for assets or clarification
 
 ---
 
 ## Common Mistakes to Avoid
 
-_Update this section after any correction from the user_
+1. **Assuming visual assets**: Don't use emojis, placeholder icons, or generic icons when Salesforce-specific icons exist. Always ask for actual assets.
 
 ---
 
