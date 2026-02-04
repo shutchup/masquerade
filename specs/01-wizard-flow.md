@@ -44,12 +44,12 @@ The New Design Wizard is a multi-step modal that guides users through creating a
 
 ### Page Types (MVP)
 
-| Page Type | Icon | Description | Status |
-|-----------|------|-------------|--------|
-| Record Page | 📄 | Design a page for viewing and editing records | MUST |
-| App Page | 📱 | Create a custom application page | MUST |
-| Home Page | 🏠 | Build a dashboard-style landing page | MUST |
-| Experience Page | 🌐 | Design pages for Experience Cloud | Nice-to-have |
+| Page Type | Icon (SLDS) | Description | Status |
+|-----------|-------------|-------------|--------|
+| Record Page | `standard/record.svg` | Design a page for viewing and editing records | MUST |
+| App Page | `standard/apps.svg` | Create a custom application page | MUST |
+| Home Page | `standard/home.svg` | Build a dashboard-style landing page | MUST |
+| Experience Page | `standard/portal.svg` | Design pages for Experience Cloud | Nice-to-have |
 
 ### Card Content
 - Icon (large, centered)
