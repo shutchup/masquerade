@@ -1,74 +1,62 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import {
   OOBComponent,
-  standardComponents,
-  baseComponents,
   getComponentsByCategory
 } from './types/oob-components';
+import { useDesign } from './hooks/useDesign';
+import { CanvasElement } from './types/design';
+import { WizardModal } from './components/wizard/WizardModal';
+import { WizardController } from './components/wizard/WizardController';
 import './styles/builder.css';
-
-// Canvas element state
-interface CanvasElement {
-  id: string;
-  componentId: string;
-  type: string;
-  name: string;
-  zone: 'main' | 'sidebar';
-}
 
 // App tabs
 const appTabs = ['Home', 'Opportunities', 'Leads', 'Tasks', 'Accounts', 'Contacts', 'Campaigns'];
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'standard' | 'base' | 'custom'>('standard');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [canvasElements, setCanvasElements] = useState<CanvasElement[]>([]);
-  const [activeNavTab, setActiveNavTab] = useState('Home');
-  const [draggedComponent, setDraggedComponent] = useState<OOBComponent | null>(null);
-  const [dragOverZone, setDragOverZone] = useState<string | null>(null);
+  const { state, dispatch } = useDesign();
+  const { design, wizard, ui, drag, selection } = state;
 
   // Get filtered components
-  const components = getComponentsByCategory(activeTab).filter(
-    comp => comp.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const components = getComponentsByCategory(ui.paletteTab).filter(
+    comp => comp.name.toLowerCase().includes(ui.searchQuery.toLowerCase())
   );
 
   // Drag handlers
   const handleDragStart = useCallback((e: React.DragEvent, component: OOBComponent) => {
-    setDraggedComponent(component);
+    dispatch({ type: 'DRAG_START', component });
     e.dataTransfer.effectAllowed = 'copy';
     e.dataTransfer.setData('text/plain', component.id);
-  }, []);
+  }, [dispatch]);
 
   const handleDragEnd = useCallback(() => {
-    setDraggedComponent(null);
-    setDragOverZone(null);
-  }, []);
+    dispatch({ type: 'DRAG_END' });
+  }, [dispatch]);
 
-  const handleDragOver = useCallback((e: React.DragEvent, zone: string) => {
+  const handleDragOver = useCallback((e: React.DragEvent, regionId: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
-    setDragOverZone(zone);
-  }, []);
+    dispatch({ type: 'SET_DRAG_OVER', regionId, index: null });
+  }, [dispatch]);
 
   const handleDragLeave = useCallback(() => {
-    setDragOverZone(null);
-  }, []);
+    dispatch({ type: 'SET_DRAG_OVER', regionId: null, index: null });
+  }, [dispatch]);
 
-  const handleDrop = useCallback((e: React.DragEvent, zone: 'main' | 'sidebar') => {
+  const handleDrop = useCallback((e: React.DragEvent, regionId: string) => {
     e.preventDefault();
-    if (draggedComponent) {
+    if (drag.draggedComponent) {
       const newElement: CanvasElement = {
-        id: `${draggedComponent.id}-${Date.now()}`,
-        componentId: draggedComponent.id,
-        type: draggedComponent.type,
-        name: draggedComponent.name,
-        zone,
+        id: `${drag.draggedComponent.id}-${Date.now()}`,
+        componentId: drag.draggedComponent.id,
+        type: drag.draggedComponent.type,
+        name: drag.draggedComponent.name,
+        properties: {},
+        order: 0,
       };
-      setCanvasElements(prev => [...prev, newElement]);
+      dispatch({ type: 'ADD_ELEMENT', regionId, element: newElement });
     }
-    setDraggedComponent(null);
-    setDragOverZone(null);
-  }, [draggedComponent]);
+    dispatch({ type: 'DRAG_END' });
+  }, [drag.draggedComponent, dispatch]);
 
   // Render OOB component preview
   const renderOOBComponent = (element: CanvasElement) => {
@@ -204,11 +192,12 @@ function App() {
     }
   };
 
-  const mainElements = canvasElements.filter(el => el.zone === 'main');
-  const sidebarElements = canvasElements.filter(el => el.zone === 'sidebar');
-
   return (
     <div className="builder-container">
+      {/* Wizard Modal */}
+      <WizardModal isOpen={wizard.isOpen} onClose={() => dispatch({ type: 'WIZARD_CLOSE' })}>
+        <WizardController />
+      </WizardModal>
       {/* Builder Toolbar (Blue Bar) */}
       <div className="builder-toolbar">
         <div className="builder-toolbar-left">
@@ -245,6 +234,12 @@ function App() {
         </div>
 
         <div className="builder-toolbar-right">
+          <button
+            className="builder-btn-primary builder-btn"
+            onClick={() => dispatch({ type: 'NEW_DESIGN' })}
+          >
+            New Design
+          </button>
           <button className="builder-btn-primary builder-btn">Share</button>
           <button className="builder-btn" title="Settings">
             <svg viewBox="0 0 52 52" width="20" height="20">
@@ -286,27 +281,27 @@ function App() {
             <input
               type="text"
               placeholder="Type to search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={ui.searchQuery}
+              onChange={(e) => dispatch({ type: 'SET_SEARCH_QUERY', query: e.target.value })}
             />
           </div>
 
           <div className="palette-tabs">
             <button
-              className={`palette-tab ${activeTab === 'standard' ? 'active' : ''}`}
-              onClick={() => setActiveTab('standard')}
+              className={`palette-tab ${ui.paletteTab === 'standard' ? 'active' : ''}`}
+              onClick={() => dispatch({ type: 'SET_PALETTE_TAB', tab: 'standard' })}
             >
               Standard
             </button>
             <button
-              className={`palette-tab ${activeTab === 'base' ? 'active' : ''}`}
-              onClick={() => setActiveTab('base')}
+              className={`palette-tab ${ui.paletteTab === 'base' ? 'active' : ''}`}
+              onClick={() => dispatch({ type: 'SET_PALETTE_TAB', tab: 'base' })}
             >
               Base
             </button>
             <button
-              className={`palette-tab ${activeTab === 'custom' ? 'active' : ''}`}
-              onClick={() => setActiveTab('custom')}
+              className={`palette-tab ${ui.paletteTab === 'custom' ? 'active' : ''}`}
+              onClick={() => dispatch({ type: 'SET_PALETTE_TAB', tab: 'custom' })}
             >
               Custom
             </button>
@@ -348,8 +343,8 @@ function App() {
                   {appTabs.map(tab => (
                     <button
                       key={tab}
-                      className={`sf-nav-tab ${activeNavTab === tab ? 'active' : ''}`}
-                      onClick={() => setActiveNavTab(tab)}
+                      className={`sf-nav-tab ${ui.activeNavTab === tab ? 'active' : ''}`}
+                      onClick={() => dispatch({ type: 'SET_ACTIVE_NAV_TAB', tab })}
                     >
                       {tab}
                       <svg viewBox="0 0 52 52" width="10" height="10" style={{ marginLeft: '4px' }}>
@@ -360,71 +355,73 @@ function App() {
                 </div>
               </div>
 
-              {/* SF App Content - Drop Zones */}
+              {/* SF App Content - Dynamic Regions */}
               <div className="sf-app-content">
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '16px' }}>
-                  {/* Main Zone */}
-                  <div>
-                    {mainElements.length > 0 ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {mainElements.map(element => (
-                          <div key={element.id}>
-                            {renderOOBComponent(element)}
-                          </div>
-                        ))}
-                        <div
-                          className={`drop-zone ${dragOverZone === 'main' ? 'drag-over' : ''}`}
-                          onDragOver={(e) => handleDragOver(e, 'main')}
-                          onDragLeave={handleDragLeave}
-                          onDrop={(e) => handleDrop(e, 'main')}
-                        >
-                          + Drop component here
-                        </div>
-                      </div>
-                    ) : (
-                      <div
-                        className={`drop-zone ${dragOverZone === 'main' ? 'drag-over' : ''}`}
-                        style={{ minHeight: '300px' }}
-                        onDragOver={(e) => handleDragOver(e, 'main')}
-                        onDragLeave={handleDragLeave}
-                        onDrop={(e) => handleDrop(e, 'main')}
+                {!design ? (
+                  <div className="drop-zone" style={{ minHeight: '400px', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div>
+                      <p style={{ fontSize: '1.125rem', color: '#706e6b', marginBottom: '1rem' }}>No design loaded</p>
+                      <button
+                        className="builder-btn-primary builder-btn"
+                        onClick={() => dispatch({ type: 'NEW_DESIGN' })}
                       >
-                        Drop components here
-                      </div>
-                    )}
+                        Create New Design
+                      </button>
+                    </div>
                   </div>
+                ) : (
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: `repeat(${design.layout.gridColumns}, 1fr)`,
+                      gap: '16px',
+                    }}
+                  >
+                    {design.layout.regions.map((region) => {
+                      const regionElements = design.regions[region.id] || [];
+                      const isDragOver = selection.dragOverRegionId === region.id;
 
-                  {/* Sidebar Zone */}
-                  <div>
-                    {sidebarElements.length > 0 ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {sidebarElements.map(element => (
-                          <div key={element.id}>
-                            {renderOOBComponent(element)}
-                          </div>
-                        ))}
+                      return (
                         <div
-                          className={`drop-zone ${dragOverZone === 'sidebar' ? 'drag-over' : ''}`}
-                          onDragOver={(e) => handleDragOver(e, 'sidebar')}
-                          onDragLeave={handleDragLeave}
-                          onDrop={(e) => handleDrop(e, 'sidebar')}
+                          key={region.id}
+                          style={{
+                            gridColumn: region.gridColumn,
+                            gridRow: region.gridRow,
+                            minHeight: region.minHeight ? `${region.minHeight}px` : 'auto',
+                          }}
                         >
-                          + Drop component here
+                          {regionElements.length > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                              {regionElements.map(element => (
+                                <div key={element.id}>
+                                  {renderOOBComponent(element)}
+                                </div>
+                              ))}
+                              <div
+                                className={`drop-zone ${isDragOver ? 'drag-over' : ''}`}
+                                onDragOver={(e) => handleDragOver(e, region.id)}
+                                onDragLeave={handleDragLeave}
+                                onDrop={(e) => handleDrop(e, region.id)}
+                              >
+                                + Drop component here
+                              </div>
+                            </div>
+                          ) : (
+                            <div
+                              className={`drop-zone ${isDragOver ? 'drag-over' : ''}`}
+                              style={{ minHeight: region.minHeight ? `${region.minHeight}px` : '200px' }}
+                              onDragOver={(e) => handleDragOver(e, region.id)}
+                              onDragLeave={handleDragLeave}
+                              onDrop={(e) => handleDrop(e, region.id)}
+                            >
+                              {region.emptyPlaceholder || 'Drop components here'}
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    ) : (
-                      <div
-                        className={`drop-zone ${dragOverZone === 'sidebar' ? 'drag-over' : ''}`}
-                        style={{ minHeight: '200px' }}
-                        onDragOver={(e) => handleDragOver(e, 'sidebar')}
-                        onDragLeave={handleDragLeave}
-                        onDrop={(e) => handleDrop(e, 'sidebar')}
-                      >
-                        Sidebar components
-                      </div>
-                    )}
+                      );
+                    })}
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>

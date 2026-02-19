@@ -170,8 +170,8 @@ export interface PageDesign {
   id: string;
   name: string;
   pageType: PageType;
-  /** For record pages, which object this represents */
-  objectName?: SalesforceObject;
+  /** For record pages, which object this represents (API name, e.g. 'Account', 'My_Custom__c') */
+  objectName?: string;
   /** Source template if created from one */
   templateId?: string;
   /** Layout configuration */
@@ -206,7 +206,7 @@ export interface PageTemplate {
   category: TemplateCategory;
   pageType: PageType;
   /** For record templates, which object */
-  objectName?: SalesforceObject;
+  objectName?: string;
   /** Preview thumbnail */
   thumbnail: string;
   /** Layout to use */
@@ -235,25 +235,6 @@ export interface SelectionState {
   /** Drop position within region */
   dropIndex: number | null;
 }
-
-// ============================================
-// Design Actions (for reducer)
-// ============================================
-
-export type DesignAction =
-  | { type: 'SET_PAGE_TYPE'; pageType: PageType; objectName?: SalesforceObject }
-  | { type: 'SET_LAYOUT'; layout: LayoutDefinition }
-  | { type: 'LOAD_TEMPLATE'; template: PageTemplate }
-  | { type: 'LOAD_DESIGN'; design: PageDesign }
-  | { type: 'ADD_ELEMENT'; regionId: string; element: CanvasElement; index?: number }
-  | { type: 'REMOVE_ELEMENT'; elementId: string }
-  | { type: 'UPDATE_ELEMENT'; elementId: string; properties: Partial<ComponentProperties> }
-  | { type: 'MOVE_ELEMENT'; elementId: string; toRegionId: string; toIndex: number }
-  | { type: 'REORDER_ELEMENTS'; regionId: string; elementIds: string[] }
-  | { type: 'SELECT_ELEMENT'; elementId: string | null }
-  | { type: 'SET_DRAG_OVER'; regionId: string | null; index: number | null }
-  | { type: 'RENAME_DESIGN'; name: string }
-  | { type: 'CLEAR_DESIGN' };
 
 // ============================================
 // Export/Import

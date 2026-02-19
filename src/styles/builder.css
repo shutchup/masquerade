@@ -1,5 +1,6 @@
 /* Lightning App Builder Style - Global Styles */
 @import '@salesforce-ux/design-system/assets/styles/salesforce-lightning-design-system.min.css';
+@import './wizard.css';
 
 * {
     box-sizing: border-box;
